@@ -1,0 +1,10 @@
+apiVersion: solution.sap/v1
+kind: Solution
+
+metadata:
+  name: hello-world-agent-2e878
+  version: 1.0.0
+  description: A simple hello world AI agent that responds to any user message.
+
+assets:
+  - ref: ./assets/hello-world-agent/asset.yaml
