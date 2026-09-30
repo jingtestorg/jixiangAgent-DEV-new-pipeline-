@@ -42,14 +42,15 @@ jobs:
           sciClientId: ${{ secrets.SCI_CLIENT_ID }}
           sciClientSecret: ${{ secrets.SCI_CLIENT_SECRET }}
 
-      # Tag: download release ZIP from GitHub, unzip in place, then deploy
-      - name: Download and prepare release ZIP
+      # Tag: download tag source ZIP from GitHub API, unzip in place, then deploy
+      - name: Download and prepare tag ZIP
         if: startsWith(github.ref, 'refs/tags/')
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release download "${{ github.ref_name }}" --archive zip -O /tmp/release.zip
-          echo "✅ Downloaded release ZIP for tag ${{ github.ref_name }}"
+          # Download source ZIP for the tag via GitHub API (works with tags, no Release needed)
+          gh api "repos/${{ github.repository }}/zipball/${{ github.ref_name }}" > /tmp/release.zip
+          echo "✅ Downloaded source ZIP for tag ${{ github.ref_name }}"
 
           # Unzip into a temp dir, strip the top-level directory GitHub adds
           mkdir -p /tmp/release-content
