@@ -1,4 +1,4 @@
-# Hello World AI Agent
+# Hello World AI Agent3.0
 
 Simple AI agent that responds "hello world" to any user message.
 
