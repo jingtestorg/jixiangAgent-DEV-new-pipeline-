@@ -42,30 +42,38 @@ jobs:
           sciClientId: ${{ secrets.SCI_CLIENT_ID }}
           sciClientSecret: ${{ secrets.SCI_CLIENT_SECRET }}
 
-      # Tag: download release ZIP from GitHub, skip build
-      - name: Download release ZIP
+      # Tag: download release ZIP from GitHub, unzip in place, then deploy
+      - name: Download and prepare release ZIP
         if: startsWith(github.ref, 'refs/tags/')
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release download "${{ github.ref_name }}" --archive zip -O "${{ github.workspace }}/release.zip"
-          echo "SOLUTION_ZIP=${{ github.workspace }}/release.zip" >> "$GITHUB_ENV"
+          gh release download "${{ github.ref_name }}" --archive zip -O /tmp/release.zip
           echo "✅ Downloaded release ZIP for tag ${{ github.ref_name }}"
 
-      # Branch: build from source
+          # Unzip into a temp dir, strip the top-level directory GitHub adds
+          mkdir -p /tmp/release-content
+          unzip -q /tmp/release.zip -d /tmp/release-content
+          TOP_DIR=$(ls /tmp/release-content)
+          echo "DEPLOY_DIR=/tmp/release-content/$TOP_DIR" >> "$GITHUB_ENV"
+
+      # Branch: use checkout code directly
+      - name: Set deploy dir for branch
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+        run: echo "DEPLOY_DIR=${{ github.workspace }}" >> "$GITHUB_ENV"
+
+      # Branch only: build is needed
       - name: Build solution
         if: ${{ !startsWith(github.ref, 'refs/tags/') }}
         shell: bash
         run: |
-          cd "${{ github.workspace }}"
-          output=$(jl solution build 2>&1)
-          echo "$output"
-          zip_file=$(echo "$output" | grep "Location:" | sed 's/.*Location: //')
-          echo "SOLUTION_ZIP=${{ github.workspace }}/$zip_file" >> "$GITHUB_ENV"
+          cd "$DEPLOY_DIR"
+          jl solution build
 
       - name: Deploy solution
         env:
           JOULE_STUDIO_TOKEN: ${{ steps.fetch-token.outputs.sciToken }}
           JOULE_STUDIO_HOST: ${{ secrets.JOULE_STUDIO_URL }}
         run: |
-          jl solution deploy "$SOLUTION_ZIP" --force
+          cd "$DEPLOY_DIR"
+          jl solution deploy --force
