@@ -49,4 +49,5 @@ jobs:
         with:
           sciToken: ${{ steps.fetch-token.outputs.sciToken }}
           jouleStudioUrl: ${{ secrets.JOULE_STUDIO_URL }}
-          targetSystems: ${{ secrets.TARGET_SYSTEMS }}
+          targetSystems: ${{ vars.TARGET_SYSTEMS }}
+
